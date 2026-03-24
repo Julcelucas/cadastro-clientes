@@ -1,0 +1,236 @@
+.app-shell {
+  width: min(1080px, calc(100% - 32px));
+  margin: 34px auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+}
+
+.hero {
+  padding: 34px;
+  border: 1px solid var(--border-soft);
+  border-radius: 26px;
+  background:
+    radial-gradient(140% 120% at 100% 0%, rgba(255, 255, 255, 0.25), transparent 45%),
+    linear-gradient(140deg, #114232 0%, #2f5d50 38%, #6e8f6f 100%);
+  color: #f6f5ef;
+  box-shadow: 0 24px 40px -30px rgba(16, 28, 22, 0.92);
+  animation: reveal 0.75s ease both;
+}
+
+.kicker {
+  margin: 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: rgba(246, 245, 239, 0.75);
+}
+
+.hero h1 {
+  margin: 10px 0;
+  color: #ffffff;
+}
+
+.hero p {
+  max-width: 55ch;
+  margin: 0;
+  color: rgba(246, 245, 239, 0.9);
+}
+
+.panel {
+  border-radius: 24px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78));
+  backdrop-filter: blur(8px);
+  padding: 24px;
+  box-shadow: 0 18px 32px -28px rgba(14, 31, 23, 0.6);
+}
+
+.panel h2 {
+  margin: 0 0 14px;
+}
+
+.cliente-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cliente-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.cliente-form input {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: rgba(248, 249, 243, 0.95);
+  color: var(--text-main);
+  font: inherit;
+  padding: 11px 13px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cliente-form input:focus,
+.list-header input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(43, 97, 74, 0.18);
+  outline: none;
+}
+
+.feedback {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #9f2323;
+}
+
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  border-radius: 12px;
+  border: 1px solid transparent;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: #f6f8f0;
+}
+
+.btn.ghost {
+  border-color: var(--border-soft);
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--text-main);
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.list-header input {
+  flex: 1;
+  max-width: 340px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: rgba(248, 249, 243, 0.95);
+  padding: 11px 13px;
+  font: inherit;
+}
+
+.cliente-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.cliente-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: rgba(250, 251, 246, 0.96);
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  animation: reveal 0.5s ease both;
+}
+
+.cliente-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.cliente-card p,
+.cliente-card small {
+  margin: 2px 0;
+  color: var(--text-muted);
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn.small {
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  border-color: var(--border-soft);
+  background: #ffffff;
+}
+
+.btn.danger {
+  background: #8f2f2f;
+  border-color: #8f2f2f;
+  color: #fff;
+}
+
+.empty-state {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    width: calc(100% - 22px);
+    margin: 20px auto;
+    gap: 14px;
+  }
+
+  .hero,
+  .panel {
+    border-radius: 18px;
+    padding: 18px;
+  }
+
+  .cliente-form {
+    grid-template-columns: 1fr;
+  }
+
+  .list-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .list-header input {
+    max-width: none;
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
