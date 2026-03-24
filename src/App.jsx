@@ -1,255 +1,408 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
-const STORAGE_KEY = 'cadastro-clientes:v1'
+const STORAGE_KEY = 'cadastro_clientes_v1'
 
-const INITIAL_FORM = {
+const PROVINCIAS_ANGOLA = [
+  'Bengo',
+  'Benguela',
+  'Bie',
+  'Cabinda',
+  'Cuando Cubango',
+  'Cuanza Norte',
+  'Cuanza Sul',
+  'Cunene',
+  'Huambo',
+  'Huila',
+  'Luanda',
+  'Lunda Norte',
+  'Lunda Sul',
+  'Malanje',
+  'Moxico',
+  'Namibe',
+  'Uige',
+  'Zaire',
+]
+
+const initialFormState = {
   nome: '',
   email: '',
   telefone: '',
-  cidade: '',
-}
-
-function formatDate(dateIso) {
-  return new Date(dateIso).toLocaleString('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })
+  nif: '',
+  empresa: '',
+  provincia: '',
+  observacoes: '',
 }
 
 function App() {
   const [clientes, setClientes] = useState(() => {
     try {
-      const data = localStorage.getItem(STORAGE_KEY)
-      return data ? JSON.parse(data) : []
+      const dadosSalvos = localStorage.getItem(STORAGE_KEY)
+      if (!dadosSalvos) {
+        return []
+      }
+
+      const clientesSalvos = JSON.parse(dadosSalvos)
+      return Array.isArray(clientesSalvos) ? clientesSalvos : []
     } catch {
       return []
     }
   })
-  const [form, setForm] = useState(INITIAL_FORM)
-  const [termoBusca, setTermoBusca] = useState('')
-  const [editingId, setEditingId] = useState(null)
-  const [erro, setErro] = useState('')
+
+  const [formData, setFormData] = useState(initialFormState)
+  const [editandoId, setEditandoId] = useState(null)
+  const [busca, setBusca] = useState('')
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(clientes))
   }, [clientes])
 
   const clientesFiltrados = useMemo(() => {
-    const termo = termoBusca.trim().toLowerCase()
-    if (!termo) return clientes
+    const termo = busca.trim().toLowerCase()
+    if (!termo) {
+      return clientes
+    }
 
-    return clientes.filter((cliente) =>
-      [cliente.nome, cliente.email, cliente.telefone, cliente.cidade]
-        .join(' ')
-        .toLowerCase()
-        .includes(termo),
-    )
-  }, [clientes, termoBusca])
+    return clientes.filter((cliente) => {
+      return [
+        cliente.nome,
+        cliente.email,
+        cliente.telefone,
+        cliente.nif,
+        cliente.empresa,
+        cliente.provincia,
+      ].some((campo) => String(campo || '').toLowerCase().includes(termo))
+    })
+  }, [busca, clientes])
 
-  function handleChange(event) {
-    const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: value }))
-  }
+  const estatisticas = useMemo(() => {
+    const total = clientes.length
+    const comTelefone = clientes.filter((cliente) => String(cliente.telefone || '').trim()).length
+    const comNif = clientes.filter((cliente) => String(cliente.nif || '').trim()).length
+
+    return {
+      total,
+      comTelefone,
+      comNif,
+    }
+  }, [clientes])
 
   function limparFormulario() {
-    setForm(INITIAL_FORM)
-    setEditingId(null)
-    setErro('')
+    setFormData(initialFormState)
+    setEditandoId(null)
   }
 
-  function handleSubmit(event) {
-    event.preventDefault()
-    setErro('')
+  function atualizarCampo(evento) {
+    const { name, value } = evento.target
+    setFormData((estadoAtual) => ({
+      ...estadoAtual,
+      [name]: value,
+    }))
+  }
 
-    const nome = form.nome.trim()
-    const email = form.email.trim().toLowerCase()
-    const telefone = form.telefone.trim()
-    const cidade = form.cidade.trim()
+  function salvarCliente(evento) {
+    evento.preventDefault()
 
-    if (!nome || !email || !telefone || !cidade) {
-      setErro('Preencha todos os campos para salvar o cliente.')
+    const nome = formData.nome.trim()
+    const email = formData.email.trim()
+    const telefone = formData.telefone.trim()
+    const nif = formData.nif.trim()
+    const empresa = formData.empresa.trim()
+    const provincia = formData.provincia.trim()
+    const observacoes = formData.observacoes.trim()
+
+    if (!nome || !email) {
       return
     }
 
-    const emailJaExiste = clientes.some(
-      (cliente) => cliente.email === email && cliente.id !== editingId,
-    )
+    const agora = new Date().toISOString()
 
-    if (emailJaExiste) {
-      setErro('Ja existe um cliente cadastrado com este e-mail.')
-      return
-    }
+    if (editandoId) {
+      setClientes((estadoAtual) =>
+        estadoAtual.map((cliente) => {
+          if (cliente.id !== editandoId) {
+            return cliente
+          }
 
-    if (editingId) {
-      setClientes((current) =>
-        current.map((cliente) =>
-          cliente.id === editingId
-            ? {
-                ...cliente,
-                nome,
-                email,
-                telefone,
-                cidade,
-                atualizadoEm: new Date().toISOString(),
-              }
-            : cliente,
-        ),
+          return {
+            ...cliente,
+            nome,
+            email,
+            telefone,
+            nif,
+            empresa,
+            provincia,
+            observacoes,
+            atualizadoEm: agora,
+          }
+        }),
       )
       limparFormulario()
       return
     }
 
-    setClientes((current) => [
-      {
-        id: crypto.randomUUID(),
-        nome,
-        email,
-        telefone,
-        cidade,
-        criadoEm: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString(),
-      },
-      ...current,
-    ])
+    const novoCliente = {
+      id: crypto.randomUUID(),
+      nome,
+      email,
+      telefone,
+      nif,
+      empresa,
+      provincia,
+      observacoes,
+      criadoEm: agora,
+      atualizadoEm: agora,
+    }
+
+    setClientes((estadoAtual) => [novoCliente, ...estadoAtual])
     limparFormulario()
   }
 
-  function handleEditar(cliente) {
-    setForm({
-      nome: cliente.nome,
-      email: cliente.email,
-      telefone: cliente.telefone,
-      cidade: cliente.cidade,
+  function iniciarEdicao(cliente) {
+    setEditandoId(cliente.id)
+    setFormData({
+      nome: cliente.nome || '',
+      email: cliente.email || '',
+      telefone: cliente.telefone || '',
+      nif: cliente.nif || '',
+      empresa: cliente.empresa || '',
+      provincia: cliente.provincia || '',
+      observacoes: cliente.observacoes || '',
     })
-    setEditingId(cliente.id)
-    setErro('')
   }
 
-  function handleExcluir(id) {
-    setClientes((current) => current.filter((cliente) => cliente.id !== id))
+  function excluirCliente(id) {
+    setClientes((estadoAtual) => estadoAtual.filter((cliente) => cliente.id !== id))
 
-    if (id === editingId) {
+    if (editandoId === id) {
       limparFormulario()
     }
+  }
+
+  function formatarData(dataIso) {
+    try {
+      return new Intl.DateTimeFormat('pt-AO', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      }).format(new Date(dataIso))
+    } catch {
+      return new Intl.DateTimeFormat('pt-PT', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      }).format(new Date(dataIso))
+    }
+  }
+
+  function formatarContacto(telefone) {
+    const valor = String(telefone || '').trim()
+    if (!valor) {
+      return '-'
+    }
+
+    if (valor.startsWith('+244')) {
+      return valor
+    }
+
+    return `+244 ${valor}`
   }
 
   return (
     <main className="app-shell">
       <header className="hero">
-        <p className="kicker">Gestao de relacionamento</p>
+        <p className="eyebrow">Gestao Comercial em Angola</p>
         <h1>Cadastro de Clientes</h1>
-        <p>
-          Organize seus contatos com uma agenda rapida, persistente e pronta
-          para uso diario.
+        <p className="subtitle">
+          Registe, edite e acompanhe clientes em contexto angolano, com dados guardados no navegador.
         </p>
       </header>
 
-      <section className="panel form-panel">
-        <h2>{editingId ? 'Editar cliente' : 'Novo cliente'}</h2>
+      <section className="dashboard-grid">
+        <article className="card form-card">
+          <h2>{editandoId ? 'Editar cliente' : 'Novo cliente'}</h2>
 
-        <form onSubmit={handleSubmit} className="cliente-form">
-          <label>
-            Nome
-            <input
-              type="text"
-              name="nome"
-              value={form.nome}
-              onChange={handleChange}
-              placeholder="Ex: Maria Silva"
-            />
-          </label>
+          <form onSubmit={salvarCliente}>
+            <label>
+              Nome completo
+              <input
+                name="nome"
+                type="text"
+                value={formData.nome}
+                onChange={atualizarCampo}
+                placeholder="Ex: Ana Paula Ribeiro"
+                required
+              />
+            </label>
 
-          <label>
-            E-mail
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="maria@email.com"
-            />
-          </label>
+            <label>
+              E-mail
+              <input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={atualizarCampo}
+                placeholder="cliente@empresa.co.ao"
+                required
+              />
+            </label>
 
-          <label>
-            Telefone
-            <input
-              type="tel"
-              name="telefone"
-              value={form.telefone}
-              onChange={handleChange}
-              placeholder="(11) 99999-9999"
-            />
-          </label>
+            <label>
+              Telefone
+              <input
+                name="telefone"
+                type="tel"
+                value={formData.telefone}
+                onChange={atualizarCampo}
+                placeholder="923 000 000"
+              />
+            </label>
 
-          <label>
-            Cidade
-            <input
-              type="text"
-              name="cidade"
-              value={form.cidade}
-              onChange={handleChange}
-              placeholder="Sao Paulo"
-            />
-          </label>
+            <label>
+              NIF
+              <input
+                name="nif"
+                type="text"
+                value={formData.nif}
+                onChange={atualizarCampo}
+                placeholder="5000000000"
+              />
+            </label>
 
-          {erro ? <p className="feedback error">{erro}</p> : null}
+            <label>
+              Empresa
+              <input
+                name="empresa"
+                type="text"
+                value={formData.empresa}
+                onChange={atualizarCampo}
+                placeholder="Nome da empresa"
+              />
+            </label>
 
-          <div className="actions">
-            <button type="submit" className="btn primary">
-              {editingId ? 'Salvar alteracoes' : 'Cadastrar cliente'}
-            </button>
-            <button type="button" className="btn ghost" onClick={limparFormulario}>
-              Limpar
-            </button>
+            <label>
+              Provincia
+              <select name="provincia" value={formData.provincia} onChange={atualizarCampo}>
+                <option value="">Selecione a provincia</option>
+                {PROVINCIAS_ANGOLA.map((provincia) => (
+                  <option key={provincia} value={provincia}>
+                    {provincia}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Observacoes
+              <textarea
+                name="observacoes"
+                value={formData.observacoes}
+                onChange={atualizarCampo}
+                placeholder="Anote detalhes importantes"
+                rows={3}
+              />
+            </label>
+
+            <div className="form-actions">
+              <button className="btn btn-primary" type="submit">
+                {editandoId ? 'Salvar alteracoes' : 'Cadastrar cliente'}
+              </button>
+
+              {editandoId && (
+                <button className="btn btn-ghost" type="button" onClick={limparFormulario}>
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </form>
+        </article>
+
+        <article className="card metrics-card">
+          <h2>Resumo rapido</h2>
+
+          <div className="metrics-list">
+            <div>
+              <span>Total</span>
+              <strong>{estatisticas.total}</strong>
+            </div>
+            <div>
+              <span>Com telefone</span>
+              <strong>{estatisticas.comTelefone}</strong>
+            </div>
+            <div>
+              <span>Com NIF</span>
+              <strong>{estatisticas.comNif}</strong>
+            </div>
           </div>
-        </form>
+
+          <label className="search-wrap">
+            Buscar cliente
+            <input
+              type="search"
+              value={busca}
+              onChange={(evento) => setBusca(evento.target.value)}
+              placeholder="Busque por nome, NIF, provincia, telefone..."
+            />
+          </label>
+        </article>
       </section>
 
-      <section className="panel list-panel">
-        <div className="list-header">
-          <h2>Clientes cadastrados</h2>
-          <input
-            type="search"
-            value={termoBusca}
-            onChange={(event) => setTermoBusca(event.target.value)}
-            placeholder="Buscar por nome, e-mail, telefone..."
-          />
-        </div>
+      <section className="card list-card">
+        <h2>Lista de clientes</h2>
 
         {clientesFiltrados.length === 0 ? (
-          <p className="empty-state">Nenhum cliente encontrado com esse filtro.</p>
+          <p className="empty-state">
+            {clientes.length === 0
+              ? 'Nenhum cliente cadastrado ainda.'
+              : 'Nenhum cliente encontrado para a busca atual.'}
+          </p>
         ) : (
-          <ul className="cliente-list">
-            {clientesFiltrados.map((cliente) => (
-              <li key={cliente.id} className="cliente-card">
+          <div className="clientes-grid">
+            {clientesFiltrados.map((cliente, index) => (
+              <article
+                key={cliente.id}
+                className="cliente-item"
+                style={{ animationDelay: `${Math.min(index * 70, 420)}ms` }}
+              >
                 <div>
                   <h3>{cliente.nome}</h3>
                   <p>{cliente.email}</p>
-                  <p>{cliente.telefone}</p>
-                  <p>{cliente.cidade}</p>
-                  <small>Atualizado em {formatDate(cliente.atualizadoEm)}</small>
                 </div>
 
-                <div className="card-actions">
-                  <button
-                    type="button"
-                    className="btn small"
-                    onClick={() => handleEditar(cliente)}
-                  >
+                <dl>
+                  <div>
+                    <dt>Telefone</dt>
+                    <dd>{formatarContacto(cliente.telefone)}</dd>
+                  </div>
+                  <div>
+                    <dt>NIF</dt>
+                    <dd>{cliente.nif || '-'}</dd>
+                  </div>
+                  <div>
+                    <dt>Provincia</dt>
+                    <dd>{cliente.provincia || '-'}</dd>
+                  </div>
+                  <div>
+                    <dt>Empresa</dt>
+                    <dd>{cliente.empresa || '-'}</dd>
+                  </div>
+                  <div>
+                    <dt>Atualizado</dt>
+                    <dd>{formatarData(cliente.atualizadoEm)}</dd>
+                  </div>
+                </dl>
+
+                {cliente.observacoes && <p className="obs">{cliente.observacoes}</p>}
+
+                <div className="item-actions">
+                  <button className="btn btn-ghost" type="button" onClick={() => iniciarEdicao(cliente)}>
                     Editar
                   </button>
-                  <button
-                    type="button"
-                    className="btn small danger"
-                    onClick={() => handleExcluir(cliente.id)}
-                  >
+                  <button className="btn btn-danger" type="button" onClick={() => excluirCliente(cliente.id)}>
                     Excluir
                   </button>
                 </div>
-              </li>
+              </article>
             ))}
-          </ul>
+          </div>
         )}
       </section>
     </main>
